@@ -1,3 +1,13 @@
+"""
+Client & Invoice transformers.
+
+This module provides utilities to:
+- Heuristically infer and normalize client columns (ID, name, status, start_date, tier)
+- Heuristically infer and normalize invoice columns (invoice_id, client_id, start_date, subtotal, tax, total, shipment_type)
+- Combine multiple partially-overlapping DataFrames into single consolidated client/invoice tables
+
+Author: Guy Kogan
+"""
 import pandas as pd
 import warnings
 
@@ -15,6 +25,29 @@ warnings.filterwarnings(
 
 # id, name, date only values in all 3 datasets so strategy is to append into single table
 def transform_clients(data_frames):
+    """
+        Infer, clean, and standardize client DataFrames.
+
+        For each input DataFrame, attempts to discover and normalize:
+          - client_id: regex ^[A-Z][0-9]{5}$
+          - client_name: "First Last" with alphabetic, apostrophes, and hyphens
+          - status: one of {ACTIVE, INACTIVE} via {active,inactive,y,n} mapping
+          - start_date: parsed from many common date formats → YYYY-MM-DD
+          - tier: preserved if present, otherwise filled with NA
+
+        Also drops currency-only columns (e.g., cells containing 'usd').
+
+        Parameters
+        ----------
+        data_frames : list[pandas.DataFrame]
+            A list of raw client-like DataFrames with heterogeneous schemas.
+
+        Returns
+        -------
+        list[pandas.DataFrame]
+            A list of cleaned DataFrames, each with columns:
+            ['client_id', 'client_name', 'status', 'start_date', 'tier'].
+        """
     cleaned = []
 
     for data_frame in data_frames:
@@ -107,6 +140,30 @@ def transform_clients(data_frames):
 
 
 def transform_invoices(data_frames):
+    """
+        Infer, clean, and standardize invoice DataFrames.
+
+        For each input DataFrame, attempts to discover and normalize:
+          - invoice_id: regex ^INV-[A-Z0-9]{7}$
+          - client_id: regex ^[A-Z][0-9]{5}$
+          - client_name: "First Last" shape
+          - start_date: parsed multi-format → YYYY-MM-DD
+          - shipment_type: one of {2DAY, GROUND, FREIGHT, EXPRESS}
+          - subtotal/tax/total: preserved if present, else NA
+
+        Also drops currency-only columns (e.g., cells containing 'USD').
+
+        Parameters
+        ----------
+        data_frames : list[pandas.DataFrame]
+            A list of raw invoice-like DataFrames with heterogeneous schemas.
+
+        Returns
+        -------
+        list[pandas.DataFrame]
+            A list of cleaned DataFrames, each with columns:
+            ['invoice_id', 'client_id', 'start_date', 'subtotal', 'tax', 'total', 'shipment_type'].
+        """
     cleaned = []
 
     for data_frame in data_frames:
@@ -196,6 +253,21 @@ def transform_invoices(data_frames):
 
 
 def combine_single_clients(dfs):
+    """
+        Merge multiple client DataFrames into a single deduplicated table.
+
+        For each client_id, picks the first non-null value for each attribute.
+
+        Parameters
+        ----------
+        dfs : list[pandas.DataFrame]
+            List of standardized client DataFrames as returned by `transform_clients`.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Columns: ['client_id', 'client_name', 'status', 'start_date', 'tier'].
+        """
     if not dfs:
         return pd.DataFrame(columns=['client_id', 'client_name', 'start_date', 'status', 'tier'])
     df = pd.concat(dfs, ignore_index=True)
@@ -223,6 +295,21 @@ def combine_single_clients(dfs):
 
 
 def combine_single_invoices(dfs):
+    """
+        Merge multiple invoice DataFrames into a single deduplicated table.
+
+        For each invoice_id, picks the first non-null value for each attribute.
+
+        Parameters
+        ----------
+        dfs : list[pandas.DataFrame]
+            List of standardized invoice DataFrames as returned by `transform_invoices`.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Columns: ['invoice_id', 'client_id', 'start_date', 'subtotal', 'tax', 'total', 'shipment_type'].
+        """
     if not dfs:
         return pd.DataFrame(columns=['invoice_id', 'client_id', 'start_date', 'subtotal', 'tax', 'total',
                                      'shipment_type'])

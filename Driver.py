@@ -1,3 +1,14 @@
+"""
+ETL Driver Script.
+
+Runs the end-to-end pipeline:
+  1) Ingest client and invoice CSVs from a directory
+  2) Transform/standardize raw frames
+  3) Combine into curated client/invoice tables and a joined model
+  4) Execute analysis queries and write outputs to disk
+
+Author: Guy Kogan
+"""
 import os
 from Ingestor import ingest
 from Transformer import transform_clients, combine_single_clients, transform_invoices, combine_single_invoices
@@ -6,6 +17,19 @@ from Queries import invoice_amount_sorted, month_over_month_growth, discount_app
 
 
 if __name__ == '__main__':
+    """
+        Execute the ETL and analysis pipeline.
+
+        Parameters
+        ----------
+        input_dir : str, optional
+            Directory containing the input CSV files. Defaults to current directory.
+
+        Returns
+        -------
+        int
+            Process exit code (0 on success).
+        """
     directory_with_files = './'
 
     # ingests clients, invoices
