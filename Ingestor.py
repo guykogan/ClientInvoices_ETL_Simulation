@@ -14,6 +14,7 @@ clients_information_list = []
 clients_invoices = []
 
 
+
 def ingest(directory_name):
     """
         Ingest CSV files from a directory into DataFrame lists.

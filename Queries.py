@@ -12,6 +12,7 @@ Author: Guy Kogan
 import pandas as pd
 
 
+
 def invoice_amount_sorted(df_query):
     """
         Aggregate invoice totals per client and return a sorted DataFrame.

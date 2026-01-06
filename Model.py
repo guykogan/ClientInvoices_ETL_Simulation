@@ -9,6 +9,7 @@ Author: Guy Kogan
 """
 
 
+
 def combine(clients, invoices):
     """
         Combine client attributes into invoice rows to produce a final invoice–client model.
