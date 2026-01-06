@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+.pytest_cache/
+.idea/
+
+# Generated outputs
+Outputs/
+Analysis/
+
+# Company-specific take-home description (do not publish)
+Data_Engineering_Takehome_Project.docx
+
+
